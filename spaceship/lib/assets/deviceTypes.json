@@ -1,0 +1,162 @@
+[
+  {
+    "identifier": "iphone35",
+    "name": "3.5-inch Display",
+    "category": "iPhone",
+    "screenshot_resolutions": [
+      [640, 920],
+      [640, 960],
+      [960, 600],
+      [960, 640]
+    ],
+    "supports_imessage_screenshots": false
+  },
+  {
+    "identifier": "iphone4",
+    "name": "4-inch Display",
+    "category": "iPhone",
+    "screenshot_resolutions": [
+      [640, 1096],
+      [640, 1136],
+      [1136, 600],
+      [1136, 640]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "iphone6",
+    "name": "4.7-inch Display",
+    "category": "iPhone",
+    "screenshot_resolutions": [
+      [750, 1334],
+      [1334, 750]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "iphone6Plus",
+    "name": "5.5-inch Display",
+    "category": "iPhone",
+    "screenshot_resolutions": [
+      [1242, 2208],
+      [2208, 1242]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "iphone58",
+    "name": "5.8-inch Display",
+    "category": "iPhone",
+    "screenshot_resolutions": [
+      [1125, 2436],
+      [2436, 1125]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "iphone65",
+    "name": "6.5-inch Display",
+    "category": "iPhone",
+    "screenshot_resolutions": [
+      [1242, 2688],
+      [2688, 1242]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "ipad",
+    "name": "9.7-inch Display",
+    "category": "iPad",
+    "screenshot_resolutions": [
+      [1536, 2008],
+      [1536, 2048],
+      [2048, 1496],
+      [2048, 1536],
+      [768, 1004],
+      [768, 1024],
+      [1024, 748],
+      [1024, 768]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "ipad105",
+    "name": "10.5-inch Display",
+    "category": "iPad",
+    "screenshot_resolutions": [
+      [1668, 2224],
+      [2224, 1668]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "ipadPro",
+    "name": "iPad Pro (2nd Generation) 12.9-inch Display",
+    "category": "iPad",
+    "screenshot_resolutions": [
+      [2048, 2732],
+      [2732, 2048]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "ipadPro11",
+    "name": "11-inch Display",
+    "category": "iPad",
+    "screenshot_resolutions": [
+      [1668, 2388],
+      [2388, 1668]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "ipadPro129",
+    "name": "iPad Pro (3rd Generation) 12.9-inch Display",
+    "category": "iPad",
+    "screenshot_resolutions": [
+      [2048, 2732],
+      [2732, 2048]
+    ],
+    "supports_imessage_screenshots": true
+  },
+  {
+    "identifier": "watchSeries4",
+    "name": "Series 4",
+    "category": "Apple Watch",
+    "screenshot_resolutions": [
+      [368, 448]
+    ],
+    "supports_imessage_screenshots": false
+  },
+  {
+    "identifier": "watch",
+    "name": "Series 3",
+    "category": "Apple Watch",
+    "screenshot_resolutions": [
+      [312, 390]
+    ],
+    "supports_imessage_screenshots": false
+  },
+  {
+    "identifier": "appleTV",
+    "name": "Apple TV",
+    "category": "Apple TV",
+    "screenshot_resolutions": [
+      [1920, 1080],
+      [3840, 2160]
+    ],
+    "supports_imessage_screenshots": false
+  },
+  {
+    "identifier": "desktop",
+    "name": "Mac",
+    "category": "Desktop",
+    "screenshot_resolutions": [
+      [1280, 800],
+      [1440, 900],
+      [2560, 1600],
+      [2880, 1800]
+    ],
+    "supports_imessage_screenshots": false
+  }
+]

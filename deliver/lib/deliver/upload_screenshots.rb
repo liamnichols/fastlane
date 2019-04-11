@@ -66,7 +66,7 @@ module Deliver
                                index,
                                screenshot.language,
                                screenshot.device_type,
-                               screenshot.is_messages?)
+                               screenshot.is_messages)
         end
         # ideally we should only save once, but itunes server can't cope it seems
         # so we save per language. See issue #349
@@ -84,9 +84,10 @@ module Deliver
       return collect_screenshots_for_languages(options[:screenshots_path], options[:ignore_language_directory_validation])
     end
 
-    def collect_screenshots_for_languages(path, ignore_validation)
+    def collect_screenshots_for_languages(path, ignore_validation, is_messages = false)
       screenshots = []
       extensions = '{png,jpg,jpeg}'
+      device_types = "{#{Spaceship::Tunes::DeviceType.types.join(",")}}"
 
       available_languages = UploadScreenshots.available_languages.each_with_object({}) do |lang, lang_hash|
         lang_hash[lang.downcase] = lang
@@ -97,14 +98,15 @@ module Deliver
 
         # Check to see if we need to traverse multiple platforms or just a single platform
         if language == Loader::APPLE_TV_DIR_NAME || language == Loader::IMESSAGE_DIR_NAME
-          screenshots.concat(collect_screenshots_for_languages(File.join(path, language), ignore_validation))
+          screenshots.concat(collect_screenshots_for_languages(File.join(path, language), ignore_validation, language == Loader::IMESSAGE_DIR_NAME))
           next
         end
 
-        files = Dir.glob(File.join(lng_folder, "*.#{extensions}"), File::FNM_CASEFOLD).sort
+        files = Dir.glob(File.join(lng_folder, "*.#{extensions}"), File::FNM_CASEFOLD)
+        files.concat(Dir.glob(File.join(lng_folder, device_types, "*.#{extensions}"), File::FNM_CASEFOLD))
         next if files.count == 0
 
-        framed_screenshots_found = Dir.glob(File.join(lng_folder, "*_framed.#{extensions}"), File::FNM_CASEFOLD).count > 0
+        framed_screenshots_found = files.any? { |file| file_is_framed?(file) }
 
         UI.important("Framed screenshots are detected! 🖼 Non-framed screenshot files may be skipped. 🏃") if framed_screenshots_found
 
@@ -117,7 +119,7 @@ module Deliver
         language = available_languages[language_dir_name.downcase]
 
         files.each do |file_path|
-          is_framed = file_path.downcase.include?("_framed.")
+          is_framed = file_is_framed?(file_path)
           is_watch = file_path.downcase.include?("watch")
 
           if framed_screenshots_found && !is_framed && !is_watch
@@ -125,7 +127,16 @@ module Deliver
             next
           end
 
-          screenshots << AppScreenshot.new(file_path, language)
+          dir_name = File.basename(File.dirname(file_path))
+          if Spaceship::Tunes::DeviceType.types.include?(dir_name)
+            screen_size = AppScreenshot.screen_size_for_device_type(dir_name)
+            device_type = dir_name
+          else
+            screen_size = AppScreenshot.calculate_screen_size(file_path)
+            device_type = AppScreenshot.device_type_for_screen_size(screen_size)
+          end
+
+          screenshots << AppScreenshot.new(file_path, language, screen_size, device_type, is_messages)
         end
       end
 
@@ -145,6 +156,10 @@ module Deliver
       end
 
       return screenshots
+    end
+
+    def file_is_framed?(file)
+      File.basename(file).downcase.include?("_framed.")
     end
 
     def self.available_languages

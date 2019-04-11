@@ -1,4 +1,5 @@
 require 'fastimage'
+require 'spaceship/tunes/device_type'
 
 require_relative 'module'
 
@@ -32,28 +33,6 @@ module Deliver
       # iPad Pro
       IOS_IPAD_PRO = "iOS-iPad-Pro"
 
-      # iPhone 5 iMessage
-      IOS_40_MESSAGES = "iOS-4-in-messages"
-      # iPhone 6, 7, & 8 iMessage
-      IOS_47_MESSAGES = "iOS-4.7-in-messages"
-      # iPhone 6 Plus, 7 Plus, & 8 Plus iMessage
-      IOS_55_MESSAGES = "iOS-5.5-in-messages"
-      # iPhone XS iMessage
-      IOS_58_MESSAGES = "iOS-5.8-in-messages"
-      # iPhone XR iMessage
-      IOS_61_MESSAGES = "iOS-6.1-in-messages"
-      # iPhone XS Max iMessage
-      IOS_65_MESSAGES = "iOS-6.5-in-messages"
-
-      # iPad iMessage
-      IOS_IPAD_MESSAGES = "iOS-iPad-messages"
-      # iPad 10.5 iMessage
-      IOS_IPAD_10_5_MESSAGES = "iOS-10.5-messages"
-      # iPad 11 iMessage
-      IOS_IPAD_11_MESSAGES = "iOS-11-messages"
-      # iPad Pro iMessage
-      IOS_IPAD_PRO_MESSAGES = "iOS-iPad-Pro-messages"
-
       # Apple Watch
       IOS_APPLE_WATCH = "iOS-Apple-Watch"
       # Apple Watch Series 4
@@ -74,50 +53,22 @@ module Deliver
 
     attr_accessor :language
 
+    attr_accessor :is_messages
+
+    attr_accessor :device_type
+
     # @param path (String) path to the screenshot file
     # @param language (String) Language of this screenshot (e.g. English)
     # @param screen_size (Deliver::AppScreenshot::ScreenSize) the screen size, which
     #  will automatically be calculated when you don't set it.
-    def initialize(path, language, screen_size = nil)
+    def initialize(path, language, screen_size, device_type, is_messages)
       self.path = path
       self.language = language
-      screen_size ||= self.class.calculate_screen_size(path)
-
       self.screen_size = screen_size
+      self.device_type = device_type
+      self.is_messages = is_messages
 
-      UI.error("Looks like the screenshot given (#{path}) does not match the requirements of #{screen_size}") unless self.is_valid?
-    end
-
-    # The iTC API requires a different notation for the device
-    def device_type
-      # This list does not include iPad Pro 12.9-inch (3rd generation)
-      # because it has same resoluation as IOS_IPAD_PRO and will clobber
-      matching = {
-        ScreenSize::IOS_35 => "iphone35",
-        ScreenSize::IOS_40 => "iphone4",
-        ScreenSize::IOS_47 => "iphone6", # also 7 and 8
-        ScreenSize::IOS_55 => "iphone6Plus", # also 7 Plus & 8 Plus
-        ScreenSize::IOS_58 => "iphone58",
-        ScreenSize::IOS_65 => "iphone65",
-        ScreenSize::IOS_IPAD => "ipad",
-        ScreenSize::IOS_IPAD_10_5 => "ipad105",
-        ScreenSize::IOS_IPAD_11 => "ipadPro11",
-        ScreenSize::IOS_IPAD_PRO => "ipadPro",
-        ScreenSize::IOS_40_MESSAGES => "iphone4",
-        ScreenSize::IOS_47_MESSAGES => "iphone6", # also 7 & 8
-        ScreenSize::IOS_55_MESSAGES => "iphone6Plus", # also 7 Plus & 8 Plus
-        ScreenSize::IOS_58_MESSAGES => "iphone58",
-        ScreenSize::IOS_65_MESSAGES => "iphone65",
-        ScreenSize::IOS_IPAD_MESSAGES => "ipad",
-        ScreenSize::IOS_IPAD_PRO_MESSAGES => "ipadPro",
-        ScreenSize::IOS_IPAD_10_5_MESSAGES => "ipad105",
-        ScreenSize::IOS_IPAD_11_MESSAGES => "ipadPro11",
-        ScreenSize::MAC => "desktop",
-        ScreenSize::IOS_APPLE_WATCH => "watch",
-        ScreenSize::IOS_APPLE_WATCH_SERIES4 => "watchSeries4",
-        ScreenSize::APPLE_TV => "appleTV"
-      }
-      return matching[self.screen_size]
+      UI.user_error!("The Screenshot '#{path}' does not match the requirements of #{screen_size}") unless self.is_valid?
     end
 
     # Nice name
@@ -136,161 +87,88 @@ module Deliver
         ScreenSize::IOS_IPAD_10_5 => "iPad 10.5",
         ScreenSize::IOS_IPAD_11 => "iPad 11",
         ScreenSize::IOS_IPAD_PRO => "iPad Pro",
-        ScreenSize::IOS_40_MESSAGES => "iPhone 5 (iMessage)",
-        ScreenSize::IOS_47_MESSAGES => "iPhone 6 (iMessage)", # also 7 & 8
-        ScreenSize::IOS_55_MESSAGES => "iPhone 6 Plus (iMessage)", # also 7 Plus & 8 Plus
-        ScreenSize::IOS_58_MESSAGES => "iPhone XS (iMessage)",
-        ScreenSize::IOS_61_MESSAGES => "iPhone XR (iMessage)",
-        ScreenSize::IOS_65_MESSAGES => "iPhone XS Max (iMessage)",
-        ScreenSize::IOS_IPAD_MESSAGES => "iPad (iMessage)",
-        ScreenSize::IOS_IPAD_PRO_MESSAGES => "iPad Pro (iMessage)",
-        ScreenSize::IOS_IPAD_10_5_MESSAGES => "iPad 10.5 (iMessage)",
-        ScreenSize::IOS_IPAD_11_MESSAGES => "iPad 11 (iMessage)",
         ScreenSize::MAC => "Mac",
         ScreenSize::IOS_APPLE_WATCH => "Watch",
         ScreenSize::IOS_APPLE_WATCH_SERIES4 => "Watch Series4",
         ScreenSize::APPLE_TV => "Apple TV"
       }
-      return matching[self.screen_size]
+
+      if is_messages
+        "#{matching[self.screen_size]} (iMessage)"
+      else
+        matching[self.screen_size]
+      end
     end
 
     # Validates the given screenshots (size and format)
     def is_valid?
       return false unless ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG"].include?(self.path.split(".").last)
-
-      return self.screen_size == self.class.calculate_screen_size(self.path)
+      return false if is_messages && !Spaceship::Tunes::DeviceType.device_types[device_type].supports_imessage_screenshots
+      return !screen_size.nil?
     end
 
-    def is_messages?
-      return [
-        ScreenSize::IOS_40_MESSAGES,
-        ScreenSize::IOS_47_MESSAGES,
-        ScreenSize::IOS_55_MESSAGES,
-        ScreenSize::IOS_58_MESSAGES,
-        ScreenSize::IOS_65_MESSAGES,
-        ScreenSize::IOS_IPAD_MESSAGES,
-        ScreenSize::IOS_IPAD_PRO_MESSAGES,
-        ScreenSize::IOS_IPAD_10_5_MESSAGES,
-        ScreenSize::IOS_IPAD_11_MESSAGES
-      ].include?(self.screen_size)
-    end
-
-    def self.device_messages
+    def self.screen_resolution_map
+      device_types = Spaceship::Tunes::DeviceType.device_types
       return {
-        ScreenSize::IOS_65_MESSAGES => [
-          [1242, 2688]
-        ],
-        ScreenSize::IOS_61_MESSAGES => [
-          [828, 1792]
-        ],
-        ScreenSize::IOS_58_MESSAGES => [
-          [1125, 2436]
-        ],
-        ScreenSize::IOS_55_MESSAGES => [
-          [1080, 1920],
-          [1242, 2208]
-        ],
-        ScreenSize::IOS_47_MESSAGES => [
-          [750, 1334]
-        ],
-        ScreenSize::IOS_40_MESSAGES => [
-          [640, 1136],
-          [640, 1096],
-          [1136, 600] # landscape status bar is smaller
-        ],
-        ScreenSize::IOS_IPAD_MESSAGES => [
-          [1024, 748],
-          [1024, 768],
-          [2048, 1496],
-          [2048, 1536],
-          [768, 1004],
-          [768, 1024],
-          [1536, 2008],
-          [1536, 2048]
-        ],
-        ScreenSize::IOS_IPAD_10_5_MESSAGES => [
-          [1668, 2224],
-          [2224, 1668]
-        ],
-        ScreenSize::IOS_IPAD_11 => [
-          [1668, 2388],
-          [2388, 1668]
-        ],
-        ScreenSize::IOS_IPAD_PRO_MESSAGES => [
-          [2732, 2048],
-          [2048, 2732]
-        ]
+        ScreenSize::IOS_65 => device_types["iphone65"].screenshot_resolutions,
+        ScreenSize::IOS_61 => [[828, 1792], [1792, 828]], # iPhone XR does not exist in Spaceship/App Store Connect
+        ScreenSize::IOS_58 => device_types["iphone58"].screenshot_resolutions,
+        ScreenSize::IOS_55 => device_types["iphone6Plus"].screenshot_resolutions,
+        ScreenSize::IOS_47 => device_types["iphone6"].screenshot_resolutions,
+        ScreenSize::IOS_40 => device_types["iphone4"].screenshot_resolutions,
+        ScreenSize::IOS_35 => device_types["iphone35"].screenshot_resolutions,
+        ScreenSize::IOS_IPAD => device_types["ipad"].screenshot_resolutions,
+        ScreenSize::IOS_IPAD_10_5 => device_types["ipad105"].screenshot_resolutions,
+        ScreenSize::IOS_IPAD_11 => device_types["ipadPro11"].screenshot_resolutions,
+        ScreenSize::IOS_IPAD_PRO => device_types["ipadPro"].screenshot_resolutions,
+        ScreenSize::MAC => device_types["desktop"].screenshot_resolutions,
+        ScreenSize::IOS_APPLE_WATCH => device_types["watch"].screenshot_resolutions,
+        ScreenSize::IOS_APPLE_WATCH_SERIES4 => device_types["watchSeries4"].screenshot_resolutions,
+        ScreenSize::APPLE_TV => device_types["appleTV"].screenshot_resolutions
       }
     end
 
-    # reference: https://help.apple.com/app-store-connect/#/devd274dd925
-    def self.devices
-      return {
-        ScreenSize::IOS_65 => [
-          [1242, 2688]
-        ],
-        ScreenSize::IOS_61 => [
-          [828, 1792]
-        ],
-        ScreenSize::IOS_58 => [
-          [1125, 2436]
-        ],
-        ScreenSize::IOS_55 => [
-          [1080, 1920],
-          [1242, 2208]
-        ],
-        ScreenSize::IOS_47 => [
-          [750, 1334]
-        ],
-        ScreenSize::IOS_40 => [
-          [640, 1136],
-          [640, 1096],
-          [1136, 600] # landscape without status bar
-        ],
-        ScreenSize::IOS_35 => [
-          [640, 960],
-          [640, 920],
-          [960, 600] # landscape without status bar
-        ],
-        ScreenSize::IOS_IPAD => [ # 9.7 inch
-          [1024, 748],
-          [1024, 768],
-          [2048, 1496],
-          [2048, 1536],
-          [768, 1004], # portrait without status bar
-          [768, 1024],
-          [1536, 2008], # portrait without status bar
-          [1536, 2048]
-        ],
-        ScreenSize::IOS_IPAD_10_5 => [
-          [1668, 2224],
-          [2224, 1668]
-        ],
-        ScreenSize::IOS_IPAD_11 => [
-          [1668, 2388],
-          [2388, 1668]
-        ],
-        ScreenSize::IOS_IPAD_PRO => [
-          [2732, 2048],
-          [2048, 2732]
-        ],
-        ScreenSize::MAC => [
-          [1280, 800],
-          [1440, 900],
-          [2560, 1600],
-          [2880, 1800]
-        ],
-        ScreenSize::IOS_APPLE_WATCH => [
-          [312, 390]
-        ],
-        ScreenSize::IOS_APPLE_WATCH_SERIES4 => [
-          [368, 448]
-        ],
-        ScreenSize::APPLE_TV => [
-          [1920, 1080],
-          [3840, 2160]
-        ]
+    def self.device_type_for_screen_size(screen_size)
+      # This list does not include iPad Pro 12.9-inch (3rd generation)
+      # because it has same resoluation as IOS_IPAD_PRO and will clobber
+      matching = {
+        ScreenSize::IOS_35 => "iphone35",
+        ScreenSize::IOS_40 => "iphone4",
+        ScreenSize::IOS_47 => "iphone6", # also 7 and 8
+        ScreenSize::IOS_55 => "iphone6Plus", # also 7 Plus & 8 Plus
+        ScreenSize::IOS_58 => "iphone58",
+        ScreenSize::IOS_65 => "iphone65",
+        ScreenSize::IOS_IPAD => "ipad",
+        ScreenSize::IOS_IPAD_10_5 => "ipad105",
+        ScreenSize::IOS_IPAD_11 => "ipadPro11",
+        ScreenSize::IOS_IPAD_PRO => "ipadPro",
+        ScreenSize::MAC => "desktop",
+        ScreenSize::IOS_APPLE_WATCH => "watch",
+        ScreenSize::IOS_APPLE_WATCH_SERIES4 => "watchSeries4",
+        ScreenSize::APPLE_TV => "appleTV"
       }
+      return matching[screen_size]
+    end
+
+    def self.screen_size_for_device_type(device_type)
+      matching = {
+        "iphone35" => ScreenSize::IOS_35,
+        "iphone4" => ScreenSize::IOS_40,
+        "iphone6" => ScreenSize::IOS_47,
+        "iphone6Plus" => ScreenSize::IOS_55,
+        "iphone58" => ScreenSize::IOS_58,
+        "iphone65" => ScreenSize::IOS_65,
+        "ipad" => ScreenSize::IOS_IPAD,
+        "ipad105" => ScreenSize::IOS_IPAD_10_5,
+        "ipadPro11" => ScreenSize::IOS_IPAD_11,
+        "ipadPro" => ScreenSize::IOS_IPAD_PRO,
+        "ipadPro129" => ScreenSize::IOS_IPAD_PRO,
+        "desktop" => ScreenSize::MAC,
+        "desktop" => ScreenSize::IOS_APPLE_WATCH,
+        "watchSeries4" => ScreenSize::IOS_APPLE_WATCH_SERIES4,
+        "appleTV" => ScreenSize::APPLE_TV
+      }
+      return matching[device_type]
     end
 
     def self.calculate_screen_size(path)
@@ -298,26 +176,10 @@ module Deliver
 
       UI.user_error!("Could not find or parse file at path '#{path}'") if size.nil? || size.count == 0
 
-      # Walk up two directories and test if we need to handle a platform that doesn't support landscape
-      path_component = Pathname.new(path).each_filename.to_a[-3]
-      if path_component.eql?("appleTV")
-        skip_landscape = true
-      end
-
-      # iMessage screenshots have same resolution as app screenshots so we need to distinguish them
-      devices = path_component.eql?("iMessage") ? self.device_messages : self.devices
-
-      devices.each do |device_type, array|
-        array.each do |resolution|
-          if skip_landscape
-            if size[0] == (resolution[0]) && size[1] == (resolution[1]) # portrait
-              return device_type
-            end
-          else
-            if (size[0] == (resolution[0]) && size[1] == (resolution[1])) || # portrait
-               (size[1] == (resolution[0]) && size[0] == (resolution[1])) # landscape
-              return device_type
-            end
+      self.screen_resolution_map.each do |screen_size, resolutions|
+        resolutions.each do |resolution|
+          if size[0] == (resolution[0]) && size[1] == (resolution[1])
+            return screen_size
           end
         end
       end
