@@ -105,6 +105,7 @@ module Deliver
         files = Dir.glob(File.join(lng_folder, "*.#{extensions}"), File::FNM_CASEFOLD)
         files.concat(Dir.glob(File.join(lng_folder, device_types, "*.#{extensions}"), File::FNM_CASEFOLD))
         next if files.count == 0
+        files = files.sort
 
         framed_screenshots_found = files.any? { |file| file_is_framed?(file) }
 
